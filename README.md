@@ -8,13 +8,6 @@ This project is a backend API developed using Laravel and MongoDB. It provides a
 - Composer
 - Laravel 11.x
 - MongoDB
-- XAMPP or any other server stack
-
-## Requirements
-- PHP 8.2 or higher
-- Composer
-- Laravel 11.x
-- MongoDB
 
 ## Installation
 1. Clone the repository:
