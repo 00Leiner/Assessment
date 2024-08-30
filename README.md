@@ -1,3 +1,133 @@
+# Backend API with Laravel and MongoDB
+
+## Project Overview
+This project is a backend API developed using Laravel and MongoDB. It provides a contact management system where users can upload, create, read, update, and delete contacts.
+
+## Requirements
+- PHP 8.2 
+- Composer
+- Laravel 11.x
+- MongoDB
+- XAMPP or any other server stack
+
+## Requirements
+- PHP 8.2 or higher
+- Composer
+- Laravel 11.x
+- MongoDB
+
+## Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/00Leiner/Assessment/tree/main/api
+   cd api
+   ```
+
+2. Install dependencies:
+   ```bash
+   composer install
+   ```
+
+3. Add the `jenssegers/mongodb` package:
+   ```bash
+   composer require jenssegers/mongodb
+   ```
+
+4. Create a `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+
+5. Run migrations (if applicable):
+   ```bash
+   php artisan migrate
+   ```
+
+## Environment Configuration
+Edit the `.env` file to set up your database connection. Here’s an example configuration for MongoDB:
+```dotenv
+DB_CONNECTION=mongodb
+DB_DSN=mongodb://127.0.0.1:27017
+DB_DATABASE=contacts_db
+```
+
+## Database Connection
+Ensure you have the following configuration in `config/database.php`:
+```php
+'mongodb' => [
+    'driver' => 'mongodb',
+    'dsn' => env('DB_DSN', 'mongodb://127.0.0.1:27017'),
+    'database' => env('DB_DATABASE', 'contacts_db'),
+],
+```
+
+## Models
+### Contact Model
+The `Contact` model is located in `app/Models/Contact.php`. It extends the `Jenssegers\Mongodb\Eloquent\Model` and defines the `contacts` collection.
+```php
+namespace App\Models;
+
+use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
+
+class Contact extends Eloquent
+{
+    protected $collection = 'contacts';
+    
+    protected $fillable = [
+        'name',
+        'email',
+        'phone',
+    ];
+    
+    public static $rules = [
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:contacts,email',
+        'phone' => 'required|string',
+    ];
+}
+```
+
+## Controllers
+### Contact Controller
+The `ContactController` handles API requests related to contacts located in `app/Http/Controller/ContactController.php`. It includes methods for uploading, retrieving, updating, and deleting contacts. 
+
+## Routes
+Define your API routes in `routes/web.php`:
+```php
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use Illuminate\Http\Request;
+
+Route::post('/upload', [ContactController::class, 'upload']);
+Route::get('/contacts', [ContactController::class, 'index']);
+Route::post('/contacts', [ContactController::class, 'store']);
+Route::get('/contacts/{id}', [ContactController::class, 'show']);
+Route::put('/contacts/{id}', [ContactController::class, 'update']);
+Route::delete('/contacts/{id}', [ContactController::class, 'destroy']);
+```
+
+## Usage
+To start the application, run the following command:
+```bash
+php artisan serve
+```
+Access the API at `http://127.0.0.1:8000/`.
+
+### Use Cases
+- **Upload Contacts**: Send a POST request to `/upload` with a JSON file containing contact information.
+- **Retrieve All Contacts**: Send a GET request to `/contacts`.
+- **Create a New Contact**: Send a POST request to `/contacts` with contact details in the request body.
+- **Get Contact by ID**: Send a GET request to `/contacts/{id}`.
+- **Update Contact**: Send a PUT request to `/contacts/{id}` with updated details.
+- **Delete Contact**: Send a DELETE request to `/contacts/{id}`.
+
+## Error Handling
+Ensure to handle errors in the controller and return appropriate responses in case of validation or processing errors.
+
+
+
+
+
 # Contact Management Python Service
 
 This Python service watches a specified directory for new JSON files containing contact information. When a new file is detected, it processes the file to validate, normalize, and store the contact data in a MongoDB database.
