@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Contact;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ContactController extends Controller
@@ -12,14 +13,27 @@ class ContactController extends Controller
     public function upload(Request $request)
     {
         try {
-            // Validate 
-            $request->validate([
-                'file' => 'required|file|mimes:json|max:2048',
+            // Validate the uploaded file
+            $validator = Validator::make($request->all(), [
+                'file' => 'required|mimes:json|max:2048', // JSON file, max size 2MB
             ]);
+
+            // Error handling
+            if ($validator->fails()) {
+                return $this->errorResponse($validator->errors()->first(), 400);
+            }
+
+            // Define the path
+            $storagePath = storage_path('app/contacts');
+
+            // Create the directory 
+            if (!file_exists($storagePath)) {
+                mkdir($storagePath, 0755, true); 
+            }
             
-            // Store in 'storage/app/contacts/' 
-            $path = $request->file('file')->storeAs('contacts', 'contact_list.json', 'local');
-            // response 
+            // Store the file in 'storage/app/contacts/' 
+            $path = $request->file('file')->store('contacts');
+
             return $this->successResponse(['path' => $path], 'File uploaded successfully');
 
         } catch (\Exception $e) {
@@ -28,7 +42,7 @@ class ContactController extends Controller
     }
 
     // get all
-    public function index(Request $request)
+    public function contacts(Request $request)
     {
         try {
             $query = Contact::query();
@@ -46,13 +60,14 @@ class ContactController extends Controller
             $contacts = $query->paginate(10); 
 
             return $this->successResponse($contacts);
+            
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve contacts: ' . $e->getMessage(), 500);
         }
     }
     
     // get a single contact by ID
-    public function show($id)
+    public function retrieve($id)
     {
         try {
             $contact = Contact::findOrFail($id);
@@ -64,8 +79,8 @@ class ContactController extends Controller
         }
     }
 
-    // create 
-    public function store(Request $request)
+    // add 
+    public function add(Request $request)
     {
         try {
             $request->validate(Contact::$rules); // Use validation rules from the model
@@ -97,7 +112,7 @@ class ContactController extends Controller
     }
 
     // delete a contact by ID
-    public function destroy($id)
+    public function delete($id)
     {
         try {
             $contact = Contact::findOrFail($id);

@@ -34,6 +34,7 @@ contact_schema = {
     "required": ["name", "email", "phone"] 
 }
 
+# Phone number format
 def normalize_phone(phone):
     # Pattern to match +1-XXX-XXX-XXXX format
     pattern_1 = re.compile(r'\+1-(\d{3})-(\d{3})-(\d{4})')
@@ -50,18 +51,19 @@ def normalize_phone(phone):
     
     return phone
 
-# Class to handle file events
+# Handle file events
 class ContactFileHandler(FileSystemEventHandler):
     def __init__(self, db, watch_directory):
         self.db = db
         self.watch_directory = watch_directory
-        self.process_last_file()  # Check and process the last file if available
+        self.process_last_file()  
 
     def on_created(self, event):
         if not event.is_directory:
             print(f"New file detected: {event.src_path}")
             threading.Thread(target=self.process_file, args=(event.src_path,)).start()
 
+    # If the storage/app/contacts/ directory is not empty, get the last file for processing
     def process_last_file(self):
         files = os.listdir(self.watch_directory)
         if files:
@@ -69,6 +71,7 @@ class ContactFileHandler(FileSystemEventHandler):
             print(f"Processing the last file: {latest_file}")
             self.process_file(latest_file)
 
+    # Parse the contact json
     def process_file(self, file_path):
         try:
             # Read the JSON file
@@ -112,6 +115,12 @@ if __name__ == "__main__":
     db = connect_to_mongo()
 
     watch_directory = os.path.abspath("../api/storage/app/contacts/")
+
+    # Check if the directory exists
+    if not os.path.exists(watch_directory):
+        # Create directory
+        os.makedirs(watch_directory)
+        print(f"Created directory: {watch_directory}")
 
     observer = Observer()
     handler = ContactFileHandler(db, watch_directory)

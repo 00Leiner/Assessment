@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
+use MongoDB\Laravel\Eloquent\Model;
 
-class Contact extends Eloquent
+class Contact extends Model
 {
     // Collection name
     protected $collection = 'contacts';

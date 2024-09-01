@@ -11,7 +11,6 @@ return [
             'database' => env('DB_DATABASE', 'contacts_db'),
         ],
     ],
-
+    
     'migrations' => 'migrations',
-
 ];

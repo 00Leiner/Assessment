@@ -21,9 +21,9 @@ This project is a backend API developed using Laravel and MongoDB. It provides a
    composer install
    ```
 
-3. Add the `jenssegers/mongodb` package:
+3. Add the `mongodb/laravel-mongodb` package:
    ```bash
-   composer require jenssegers/mongodb
+   composer require mongodb/laravel-mongodb
    ```
 
 4. Create a `.env` file:
@@ -31,9 +31,9 @@ This project is a backend API developed using Laravel and MongoDB. It provides a
    cp .env.example .env
    ```
 
-5. Run migrations (if applicable):
+5. Insrall api routes:
    ```bash
-   php artisan migrate
+   php artisan install:api
    ```
 
 ## Environment Configuration
@@ -56,22 +56,27 @@ Ensure you have the following configuration in `config/database.php`:
 
 ## Models
 ### Contact Model
-The `Contact` model is located in `app/Models/Contact.php`. It extends the `Jenssegers\Mongodb\Eloquent\Model` and defines the `contacts` collection.
+
+The `Contact` model is located in `app/Models/Contact.php`. It extends the `MongoDB\Laravel\Eloquent\Model` class and defines the structure for the `contacts` collection.
+
 ```php
 namespace App\Models;
 
-use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
+use MongoDB\Laravel\Eloquent\Model;
 
-class Contact extends Eloquent
+class Contact extends Model
 {
+    // Collection name
     protected $collection = 'contacts';
     
+    // Fillable attributes
     protected $fillable = [
         'name',
         'email',
         'phone',
     ];
     
+    // Validation rules
     public static $rules = [
         'name' => 'required|string|max:255',
         'email' => 'required|email|unique:contacts,email',
@@ -82,37 +87,41 @@ class Contact extends Eloquent
 
 ## Controllers
 ### Contact Controller
-The `ContactController` handles API requests related to contacts located in `app/Http/Controller/ContactController.php`. It includes methods for uploading, retrieving, updating, and deleting contacts. 
+
+The `ContactController` is responsible for handling API requests related to contacts and is located in `app/Http/Controllers/ContactController.php`. This controller includes methods for performing various operations on contacts, such as uploading, searching, adding, updating, deleting, and retrieving contact information.
 
 ## Routes
+
 Define your API routes in `routes/web.php`:
+
 ```php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ContactController;
-use Illuminate\Http\Request;
 
 Route::post('/upload', [ContactController::class, 'upload']);
-Route::get('/contacts', [ContactController::class, 'index']);
-Route::post('/contacts', [ContactController::class, 'store']);
-Route::get('/contacts/{id}', [ContactController::class, 'show']);
-Route::put('/contacts/{id}', [ContactController::class, 'update']);
-Route::delete('/contacts/{id}', [ContactController::class, 'destroy']);
+Route::get('/contacts', [ContactController::class, 'contacts']);
+Route::post('/add', [ContactController::class, 'add']);
+Route::get('/retrieve/{id}', [ContactController::class, 'retrieve']);
+Route::put('/update/{id}', [ContactController::class, 'update']);
+Route::delete('/delete/{id}', [ContactController::class, 'delete']);
 ```
 
 ## Usage
+
 To start the application, run the following command:
+
 ```bash
 php artisan serve
-```
-Access the API at `http://127.0.0.1:8000/`.
+
+Access the API at `http://127.0.0.1:8000`.
 
 ### Use Cases
-- **Upload Contacts**: Send a POST request to `/upload` with a JSON file containing contact information.
-- **Retrieve All Contacts**: Send a GET request to `/contacts`.
-- **Create a New Contact**: Send a POST request to `/contacts` with contact details in the request body.
-- **Get Contact by ID**: Send a GET request to `/contacts/{id}`.
-- **Update Contact**: Send a PUT request to `/contacts/{id}` with updated details.
-- **Delete Contact**: Send a DELETE request to `/contacts/{id}`.
+- **Upload Contacts**: Send a POST request to `/api/upload` with with a JSON file containing contact information. This endpoint handles the file uploads and stores the uploaded file in `storage/app/contacts/`.
+- **Retrieve All Contacts**: Send a GET request to `/api/contacts` to get a paginated list of all contacts. This endpoint supports searching by name or email.
+- **Create a New Contact**: Send a POST request to `/api/add` with contact details in the request body.
+- **Get Contact by ID**: Send a GET request to `/api/retrieve/{id}` to retrieve a specific contact by its ID.
+- **Update Contact**: Send a PUT request to `/api/update/{id}` with the updated contact details in the request body to modify an existing contact.
+- **Delete Contact**: Send a DELETE request to `/api/delete/{id}` to remove a contact by its ID.
 
 ## Error Handling
 Ensure to handle errors in the controller and return appropriate responses in case of validation or processing errors.
@@ -193,7 +202,7 @@ Run the service by executing the following command in your terminal:
 python service.py
 ```
 
-The service will start watching the `storage/app/contacts/` directory for new JSON files. 
+The service will start watching the `../api/storage/app/contacts/` directory for new JSON files. 
 
 ## JSON File Format
 
