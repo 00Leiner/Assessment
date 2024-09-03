@@ -225,7 +225,6 @@ The JSON files should contain an array of contact objects in the following forma
 
 ### Important Notes
 
-- Ensure that the phone numbers in the JSON files are in the supported formats (`+1-XXX-XXX-XXXX` or `XXX-XXX-XXXX`).
 - The service will automatically remove processed files from the directory.
 
 
