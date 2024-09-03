@@ -19,11 +19,15 @@ DB_DATABASE = os.getenv("DB_DATABASE")
 
 # connection
 def connect_to_mongo():
-    client = pymongo.MongoClient(DB_DSN)
-    db = client[DB_DATABASE]
-    return db
+    try:
+        client = pymongo.MongoClient(DB_DSN)
+        db = client[DB_DATABASE]
+        return db
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        raise
 
-#schedma or model
+# schema or model
 contact_schema = {
     "type": "object",
     "properties": {
@@ -36,40 +40,26 @@ contact_schema = {
 
 # Phone number format
 def normalize_phone(phone):
-    # Pattern to match +1-XXX-XXX-XXXX format
-    pattern_1 = re.compile(r'\+1-(\d{3})-(\d{3})-(\d{4})')
-    # Pattern to match XXX-XXX-XXXX format
-    pattern_2 = re.compile(r'(\d{3})-(\d{3})-(\d{4})')
-    
-    match_1 = pattern_1.match(phone)
-    match_2 = pattern_2.match(phone)
-    
-    if match_1:
-        return f"({match_1.group(1)}) {match_1.group(2)}-{match_1.group(3)}"
-    elif match_2:
-        return f"({match_2.group(1)}) {match_2.group(2)}-{match_2.group(3)}"
+    # Get only number
+    cleaned_phone = re.sub(r'\D', '', phone)
+    # print(cleaned_phone)
+    if len(cleaned_phone) == 10: 
+        return f"+1-{cleaned_phone[:3]}-{cleaned_phone[3:6]}-{cleaned_phone[6:]}"
+    elif len(cleaned_phone) == 11: 
+        cleaned_phone[0] == 1
+        return f"+{cleaned_phone[0]}-{cleaned_phone[1:4]}-{cleaned_phone[4:7]}-{cleaned_phone[7:]}"
     
     return phone
 
 # Handle file events
 class ContactFileHandler(FileSystemEventHandler):
-    def __init__(self, db, watch_directory):
+    def __init__(self, db):
         self.db = db
-        self.watch_directory = watch_directory
-        self.process_last_file()  
 
     def on_created(self, event):
         if not event.is_directory:
             print(f"New file detected: {event.src_path}")
             threading.Thread(target=self.process_file, args=(event.src_path,)).start()
-
-    # If the storage/app/contacts/ directory is not empty, get the last file for processing
-    def process_last_file(self):
-        files = os.listdir(self.watch_directory)
-        if files:
-            latest_file = max([os.path.join(self.watch_directory, f) for f in files], key=os.path.getmtime)
-            print(f"Processing the last file: {latest_file}")
-            self.process_file(latest_file)
 
     # Parse the contact json
     def process_file(self, file_path):
@@ -84,7 +74,7 @@ class ContactFileHandler(FileSystemEventHandler):
                     # Validate data format
                     validate(instance=contact, schema=contact_schema)
 
-                    # Phone number validation
+                    # Phone number formatting 
                     contact['phone'] = normalize_phone(contact['phone'])
 
                     # Check for unique email
@@ -123,7 +113,7 @@ if __name__ == "__main__":
         print(f"Created directory: {watch_directory}")
 
     observer = Observer()
-    handler = ContactFileHandler(db, watch_directory)
+    handler = ContactFileHandler(db)
     observer.schedule(handler, watch_directory, recursive=False)
 
     observer_thread = threading.Thread(target=start_observer, args=(observer,))
