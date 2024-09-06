@@ -51,11 +51,16 @@ def normalize_phone(phone):
     
     return phone
 
+# Validate email format
+def is_valid_email(email):
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
 # Handle file events
 class ContactFileHandler(FileSystemEventHandler):
     def __init__(self, db):
         self.db = db
-
+    
     def on_created(self, event):
         if not event.is_directory:
             print(f"New file detected: {event.src_path}")
@@ -74,12 +79,17 @@ class ContactFileHandler(FileSystemEventHandler):
                     # Validate data format
                     validate(instance=contact, schema=contact_schema)
 
+                    # Additional email validation
+                    if not is_valid_email(contact['email']):
+                        print(f"Invalid email format: {contact['email']}.")
+                        continue  # Skip to the next contact
+
                     # Phone number formatting 
                     contact['phone'] = normalize_phone(contact['phone'])
 
                     # Check for unique email
                     if self.db.contacts.find_one({"email": contact['email']}):
-                        print(f"Email {contact['email']} is already in the database.")
+                        print(f"Email {contact['email']} is already in the database. Skipping this contact.")
                         continue
 
                     # Insert into MongoDB
@@ -87,9 +97,9 @@ class ContactFileHandler(FileSystemEventHandler):
                     print(f"Inserted contact: {contact}")
 
                 except ValidationError as e:
-                    print(f"Validation error for contact {contact}: {e.message}")
+                    print(f"Validation error for contact {contact}: {e.message}. Skipping this contact.")
                 except Exception as e:
-                    print(f"Error processing contact {contact}: {e}")
+                    print(f"Error processing contact {contact}: {e}. Skipping this contact.")
 
         except json.JSONDecodeError:
             print(f"Error reading JSON file: {file_path}")
@@ -97,6 +107,13 @@ class ContactFileHandler(FileSystemEventHandler):
             # Remove the processed file 
             os.remove(file_path)
          
+    def check_existing_files(self, directory):
+        for filename in os.listdir(directory):
+            if filename.endswith('.json'):
+                file_path = os.path.join(directory, filename)
+                print(f"Processing existing file: {file_path}")
+                self.process_file(file_path)
+
 def start_observer(observer):
     observer.start()
     print(f"Watching for new files in: {watch_directory}")
@@ -112,8 +129,10 @@ if __name__ == "__main__":
         os.makedirs(watch_directory)
         print(f"Created directory: {watch_directory}")
 
-    observer = Observer()
     handler = ContactFileHandler(db)
+    handler.check_existing_files(watch_directory)
+
+    observer = Observer()
     observer.schedule(handler, watch_directory, recursive=False)
 
     observer_thread = threading.Thread(target=start_observer, args=(observer,))
